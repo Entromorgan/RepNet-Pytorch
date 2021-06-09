@@ -9,9 +9,9 @@ All the dataset videos are at <a href="https://drive.google.com/drive/folders/1G
 
 Sample result:
 
-![sampleresult](skipping.gif)
+![sampleresult](figs/skipping.gif)
 
 Features created using self similarity and multi headed attention respectively:
 
-![figure](features.png)
-![figure2](features2.png)
+![figure](figs/features.png)
+![figure2](figs/features2.png)

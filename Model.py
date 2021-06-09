@@ -2,8 +2,7 @@ import torch, torchvision
 import torch.nn as nn
 import torch.nn.functional as F
 
-import math, base64, io, os, time, cv2
-import numpy as np
+import math
 
 #============classes===================
 
@@ -108,8 +107,10 @@ class RepNet(nn.Module):
         self.pool = nn.MaxPool3d(kernel_size = (1, 7, 7))
         
         self.sims = Sims()
+        self.mha_sim = nn.MultiheadAttention(embed_dim=512, num_heads=4)
+
         
-        self.conv3x3 = nn.Conv2d(in_channels = 1,
+        self.conv3x3 = nn.Conv2d(in_channels = 2,
                                  out_channels = 32,
                                  kernel_size = 3,
                                  padding = 1)
@@ -148,8 +149,16 @@ class RepNet(nn.Module):
         x = x.transpose(1, 2)                           #batch, num_frame, 512
         x = x.reshape(batch_size, self.num_frames, -1)
 
-        x = F.relu(self.sims(x))
+        x1 = F.relu(self.sims(x))
+        
+        
+        x = x.transpose(0, 1)
+        _, x2 = self.mha_sim(x, x, x)
+        x2 = F.relu(x2.unsqueeze(1))
+        x = torch.cat([x1, x2], dim = 1)
+        
         xret = x
+        print(xret.shape)
         
         x = F.relu(self.bn2(self.conv3x3(x)))     #batch, 32, num_frame, num_frame
         #print(x.shape)

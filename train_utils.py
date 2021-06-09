@@ -1,18 +1,9 @@
-import os
-import math
 import time
 import torch
 import numpy as np
 from tqdm import tqdm
 from torch.utils.data import DataLoader, ConcatDataset
-from IPython.display import clear_output
-import torch.nn.functional as F
 
-use_cuda = torch.cuda.is_available()
-device = torch.device("cuda" if use_cuda else "cpu")
-
-import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
 
 #============metrics ==================
 def MAE(y, ypred) :
@@ -24,6 +15,7 @@ def MAE(y, ypred) :
     ae = np.sum(np.absolute(yarr - ypredarr))
     mae = ae / yarr.flatten().shape[0]
     return mae
+
 
 def f1score(y, ypred) :
     """for periodicity"""
@@ -39,6 +31,7 @@ def f1score(y, ypred) :
         fscore = 2*precision*recall/(precision + recall)
     return fscore
 
+
 def running_mean(x, N):
     cumsum = np.cumsum(np.insert(x, 0, 0)) 
     return (cumsum[N:] - cumsum[:-N]) / float(N)
@@ -49,12 +42,13 @@ def getPeriodicity(periodLength):
     periodicity = -torch.nn.functional.threshold(-periodicity, -1, -1)
     return periodicity
 
+
 def getCount(periodLength):
     frac = 1/periodLength
     frac = torch.nan_to_num(frac, 0, 0, 0)
-
     count = torch.sum(frac, dim = [1])
     return count
+
 
 def getStart(periodLength):
     tmp = periodLength.squeeze(2)
@@ -63,7 +57,9 @@ def getStart(periodLength):
     indices = torch.argmax(tmp2, 1, keepdim=True)
     return indices
 
+
 def training_loop(n_epochs,
+                  device,
                   model,
                   train_set,
                   val_set,
@@ -76,7 +72,6 @@ def training_loop(n_epochs,
                   validate = True,
                   lastCkptPath = None):
 
-    
     
     prevEpoch = 0
     trainLosses = []
@@ -97,7 +92,6 @@ def training_loop(n_epochs,
         
         del checkpoint
     
-        
     model.to(device)
 
     for state in optimizer.state.values():
@@ -133,7 +127,6 @@ def training_loop(n_epochs,
             i = 1
             a=0
             for X, y in pbar:
-                
                 torch.cuda.empty_cache()
                 model.train()
                 X = X.to(device).float()
@@ -168,8 +161,7 @@ def training_loop(n_epochs,
                                   'MAE_period': (mae/i),
                                   'MAE_count' : (mae_count/i),
                                   'Mean Tr Loss':np.mean(trainLosses[-i+1:])})
-                
-                
+             
         if validate:
             #validation loop
             with torch.no_grad():
@@ -206,7 +198,7 @@ def training_loop(n_epochs,
                     mae_count += loss3.item()
                     
                     del X, y, y1, y2, y1pred, y2pred
-                    i+=1
+                    i += 1
                     pbar.set_postfix({'Epoch': epoch,
                                     'MAE_period': (mae/i),
                                     'MAE_count' : (mae_count/i),
@@ -233,9 +225,11 @@ def trainTestSplit(dataset, TTR):
     valDataset = torch.utils.data.Subset(dataset, range(int(TTR*len(dataset)), len(dataset)))
     return trainDataset, valDataset
 
+
 def running_mean(x, N):
     cumsum = np.cumsum(np.insert(x, 0, 0)) 
     return (cumsum[N:] - cumsum[:-N]) / float(N)
+
 
 def plot_grad_flow(named_parameters):
     '''Plots the gradients flowing through different layers in the net during training.
@@ -243,7 +237,10 @@ def plot_grad_flow(named_parameters):
 
     Usage: Plug this function in Trainer class after loss.backwards() as 
     "plot_grad_flow(self.model.named_parameters())" to visualize the gradient flow'''
-   
+    
+    import matplotlib.pyplot as plts
+    from matplotlib.lines import Line2D
+
     ave_grads = []
     max_grads= []
     median_grads = []

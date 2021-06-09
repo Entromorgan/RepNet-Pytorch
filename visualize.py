@@ -1,15 +1,11 @@
 import torch
+import cv2
 import numpy as np
-import random
-import cv2, os
 from PIL import Image
 from torchvision import transforms
 
 
-use_cuda = torch.cuda.is_available()
-device = torch.device("cuda" if use_cuda else "cpu")
-
-def predRep(vidPath, model, numdivs = 1):
+def predRep(vidPath, model, device, numdivs = 1):
     countbest=[]
     periodicitybest = []
     Xbest = None
@@ -24,7 +20,7 @@ def predRep(vidPath, model, numdivs = 1):
         sims = []
         X = []
         for j in range(i):
-            x, periodLengthj, periodicityj, sim = predSmall(frames[j*64:(j+1)*64], model)
+            x, periodLengthj, periodicityj, sim = predSmall(frames[j*64:(j+1)*64], model, device)
             periodicity.extend(list(periodicityj.squeeze().cpu().numpy()))
             periodLength.extend(list(periodLengthj.squeeze().cpu().numpy()))
             X.append(x)
@@ -62,15 +58,14 @@ def getFrames(vidPath, num_frames=64):
         frames.append(img)
     cap.release()
     
-    
     newFrames = []
     for i in range(1, num_frames + 1):
         newFrames.append(frames[i * len(frames)//num_frames  - 1])
     
     return newFrames
 
-def predSmall(frames, model):
 
+def predSmall(frames, model, device):
     Xlist = []
     for img in frames:
 
@@ -97,8 +92,8 @@ def predSmall(frames, model):
     
     return X, periodLength, periodicity, sim
 
+
 def getAnim(X, countPred = None, count = None, idx = None):
-    
     import matplotlib.pyplot as plt
     from matplotlib.animation import FuncAnimation
     plt.rcParams['animation.html'] = "jshtml"
@@ -125,6 +120,7 @@ def getAnim(X, countPred = None, count = None, idx = None):
     anim = FuncAnimation(fig, animate, frames=64, interval=500)
     
     return anim
+
 
 def getCount(period, periodicity = None):
     period = period.round().squeeze()
